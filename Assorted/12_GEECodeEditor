@@ -1,0 +1,159 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var rect = 
+    /* color: #d63000 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[34.908841196642015, 33.40509351041157],
+          [34.908841196642015, 29.13898436665355],
+          [39.347317759142015, 29.13898436665355],
+          [39.347317759142015, 33.40509351041157]]], null, false),
+    imageCollection = ee.ImageCollection("LANDSAT/LC08/C01/T1_RT_TOA");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// Draw a rectangle around Jordan. This should appear above in the imports 
+// section. 
+  /*Note: the rectangle was given the name "geometry" by default and it is 
+  purple. All the variable names of objects in the imports section will be in 
+  purple in the imports section, and also in the code editor section. You can 
+  change the name by clicking on "geometry" and typing a new name. Let's rename
+  the rectangle "rect" for short.*/
+
+// Now trying coping rect from the imports section down into the code editor
+// below this.
+var square = 
+    /* color: #d63000 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[34.908841196642015, 33.40509351041157],
+          [34.908841196642015, 29.13898436665355],
+          [39.347317759142015, 29.13898436665355],
+          [39.347317759142015, 33.40509351041157]]], null, false);
+  /*Note: rect is still in purple. If we change the name down here to 'square',
+  the name square will be black. Square is the exact same as rect, but now they
+  are separate objects to GEE because rect was declared in the imports section,
+  and we have not changed that.*/
+
+
+// Search for the Landsat 8 Tier 1 & Real-time Top of Atmosphere (TOA) dataset 
+// and click import.
+
+// Now it should appear above in the imports section. 
+
+// We could copy it below, like we did with the rectangle. Here it is below:
+var imageCollection = ee.ImageCollection("LANDSAT/LC08/C01/T1_RT_TOA");
+  /*Note: the way to load a dataset is a string that represents the file pathway
+  to where the data is stored.*/
+
+// Let's see how big the collection is
+print('Landsat 8 archive size: ', imageCollection.size()); 
+  // On July 19th, 2019 at 1:22pm PST it had 928,893 images in it
+
+// We can learn more about the imageCollection by printing it, but limit it to 
+// the first 10 images because 900000+ images is too many.
+print('Landsat 8 Archive: ', imageCollection.limit(10));
+
+// Let's filter the collection because we don't need global coverage, and assign
+// it to a new variable called l8Subset.
+var l8Subset = imageCollection
+                  // We can filter by location. Let's use our rectangle. 
+                  .filterBounds(rect)
+                  // We can also filter by a time range
+                  .filterDate('2018-01-01','2019-01-01')
+                  /*We can also do a custom filter by using .filter() with an
+                  ee.Filter.~() that we write. This one filters to images with a
+                  percent cloud cover less than or equal to 20%. */
+                  .filter(ee.Filter.lte('CLOUD_COVER', 20));
+
+// Now let's see how many images are in l8Subset.
+print('Filtered collection size: ', l8Subset.size());
+  // We are down to a little over 300 images now. That is still a lot, but it is
+  // much more managable than 900,000+
+
+// Let's see what the images look like. We can do this with Map.addLayer(). 
+
+/*To see how to used the Map.addLayer() function, look it up in the Docs tab. 
+I have short descriptions of the parameters below, but the Docs tab gives a more
+comprehensive explaination for each.*/
+
+// This is the full Map.addLayer with all its parameters.
+  /*Map.addLayer({eeObject: ,     // here goes the imageCollection
+                  visParams: ,    // tell GEE how to display the images
+                  name: ,         // give the map layer a name
+                  shown: ,        // should the layer be on or off at first?
+                  opacity: })     // how opaque or transparent should they layer
+                                  //   be to begin with?
+  */
+  
+  /*Note: visParams and other visualization parameters in functions are great
+  because they give users a lot of control how the data is displayed. 
+  Unfortantely, that control can require specifying a dictionary of parameters, 
+  so we have a dictionary in a dictionary just to visualise an image. Also 
+  unfortunately, vizParams is not included in the Docs tab, but it is well
+  documented in the GEE Developer Guide: 
+  https://developers.google.com/earth-engine/image_visualization
+  
+  Fortunately, we write one vizParams dictionary and save it as a variable to 
+  reuse for many Map.addLayer() functions.
+  
+  All the parameters that a vizParams can accept are:
+  vizParams = {bands: ,     // A list of 3 bands to use for RGB in order, 
+                            //   defaults to the first three bands if not 
+                            //   specified. It also accepts 1 band, and then  
+                            //   that is displayed in grayscale unless a palette
+                            //   is provided.
+                            
+               min: ,       // The minimum value(s) to stretch the display
+                            //   contrast to. It can have 1 value or a list of 3
+                            //   with a value for each band. The default is 0.
+                            
+               max: ,       // The maximum value(s) to stretch the display 
+                            //   contrast to. 1 value or a list of 3. The 
+                            //   default is 255. 
+                            
+               gain: ,      // A value(s) to multiply all pixels by. 1 value or 
+                            //   a list of 3. The default is 1.
+                            
+               bais: ,      // A value(s) to add to each pixel. 1 value or a 
+                            //   list of 3. The default is 0
+                            
+               gamma: ,     // A correction factor(s) that adjusts the relative
+                            //   brightness of each band to the other bands. 
+                            //   1 value or a list of 3. The default is 1.
+                            
+               palette: ,   // A list of hexidemical colors. Only works when 
+                            //   there is  1 band.
+                            
+               opacity: ,   // A number 0 to 1. This sets the maximum opacity
+                            //   the layer can have. This is not reversible on
+                            //   the map like the Map.addLayer() opacity is. If
+                            //   this is set to 0.5 then full opacity on the map
+                            //   can only get up to 0.5. The default is 1.
+                            
+               format:      // 'jpg' or 'png'. Do not need to worry about this. 
+  }
+  
+    Notes: max and min & gain and bais are mutally exclusive. They cannot be 
+    be specified at the same time or GEE will return an error.*/
+  
+// Okay, now we know how to add a map layer, can finally do it. 
+  // Specify a vizParams dicitionary that we can use again.
+  var visTOA = {
+    bands: ['B4', 'B3', 'B2'],
+    min: 0,
+    max: 0.4,
+    gamma: [1, 1.1, 0.9]
+  };
+  
+  // Add the filtered landsat 8 collection to the map
+  Map.addLayer({
+    eeObject: l8Subset, 
+    visParams: visTOA, 
+    name: 'Landsat 8'
+  });

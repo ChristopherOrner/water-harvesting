@@ -1,0 +1,308 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var WHS1 = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[35.881273789504576, 30.503298264269514],
+          [35.881300611594725, 30.50248479198894],
+          [35.88147763738971, 30.502359997343934],
+          [35.881815595725584, 30.50241083962605],
+          [35.882266206840086, 30.50241546165038],
+          [35.882325215438414, 30.5025217681493],
+          [35.882303757766294, 30.503238178481524],
+          [35.88220719824176, 30.50328902030457],
+          [35.881815595725584, 30.50332599615917]]]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// Notes ///////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+// Goals ///////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+// Resources ///////////////////////////////////////////////////////////////////////////////////////
+ 
+
+
+// Datasets ////////////////////////////////////////////////////////////////////////////////////////
+  
+ 
+  
+  // WHS / Haffirs (updated points)
+    var haffirs = ee.FeatureCollection("users/cjorner/Jordan/WHS_MoA_withPCS");
+    
+  // to select a haffir by name, enter it below:
+    var numWHS = 3;
+    var startDate = '2013-11-01';
+    var endDate = '2019-07-24';
+    var buf = 1000;
+    
+  // filter to the desired haffir
+    var WHS = haffirs.filter(ee.Filter.and(
+                                ee.Filter.eq('Feature', 'WHS'),
+                                ee.Filter.eq('Number', numWHS)
+                                )
+                            );
+                            
+    var WHS_pt = WHS.geometry();
+  
+  // Landsat 8 - Tier 1 & Real Time scenes radiometrically corrected to Top of the Atmosphere reflectance
+    var l8TOA = ee.ImageCollection("LANDSAT/LC08/C01/T1_RT_TOA")
+        // filter to a period of time; the earliest landsat8 imagery is from '2013-04-11'
+          .filterDate(startDate, endDate)
+        // filter to one WHS
+          .filterBounds(WHS_pt);
+    var Video = require('users/lukemacaulay/Jordan:Functions/CreateVideos') ;
+    Video.Landsat.TOA(l8TOA, 200, WHS, 1000);
+          
+    // var l8SR = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+    //     // filter to a period of time; the earliest landsat8 imagery is from '2013-04-11'
+    //       .filterDate(startDate, endDate)
+    //     // filter to one WHS
+    //       .filterBounds(WHS_pt);
+    
+    
+// Constants ///////////////////////////////////////////////////////////////////////////////////////
+ 
+  // What's the maximum cloud score per pixel that I'm willing to accept (20 => 20%)
+    var acceptableCloudScore = 20;
+  
+  // Bounding box around selected WHS, 2000m by 2000m centered on the point
+    var bounds = ee.Geometry(WHS_pt).buffer(buf).bounds();
+  
+      
+  // Define the visualization parameters for the true color image
+      var vizRGB = {
+        bands: ['B4', 'B3', 'B2'],
+        min: 0,
+        max: 0.5,
+        gamma: [0.95, 1.1, 1],
+      }; 
+      
+  // Visualization paratmeters for NDWI layers
+      var vizNDWI = {
+        bands:'NDWI', 
+        min: -1, 
+        max: 1,
+        palette: ['white', 'white', 'white','blue', 'blue'],
+      };
+      
+
+// Functions ///////////////////////////////////////////////////////////////////////////////////////
+
+  // create function that assesses NDWI 
+    var addNDWI = function(image) {
+      var ndwi = image.normalizedDifference(['B3', 'B5']).rename('NDWI');
+      return image.addBands(ndwi);
+    };
+  
+  // create function that assesses cloudscore - requires imagery to be in reflectance, like TOA to work - raw values yields 0's.
+    var addCloudPerPixel = function(image) {
+      var cloudscore = ee.Algorithms.Landsat.simpleCloudScore(image).select('cloud'); // band is named 'cloud' by default
+      return image.addBands(cloudscore);
+    };
+  
+  // This function masks the input with a threshold on the simple cloud score.
+    var cloudMask = function(image) {
+      var cloudscore = image.select('cloud');
+      return image.updateMask(cloudscore.lte(10));
+    };
+    
+  // This function masks clouds in Landsat 8 imagery.
+    // var maskClouds = function(image) {
+    //   var scored = ee.Algorithms.Landsat.simpleCloudScore(image);
+    //   return image.updateMask(scored.select(['cloud']).lt(20));
+    // };  
+    
+  // Get a specific metadata property.
+    var getCloudPerScene = function(image) {
+      var cloudiness = image.metadata('CLOUD_COVER').rename('cloudiness');
+      return image.addBands(cloudiness);
+    };
+    
+    
+  // Get the timestamp and convert it to a date.
+    //var date = ee.Date(image.get('system:time_start'));
+    //print('Timestamp: ', date); // ee.Date
+    
+  // This function masks clouds and adds quality bands to Landsat 8 images.
+    // var addQualityBands = function(image) {
+    //   return maskClouds(image)
+    //     // NDVI
+    //     .addBands(image.normalizedDifference(['B5', 'B4']))
+    //     // time in days
+    //     .addBands(image.metadata('system:time_start'));
+
+// Code ////////////////////////////////////////////////////////////////////////////////////////////
+  
+  // create and add a NDWI layer to the Landsat 8 imageCollection
+    var landsat8NDWI = l8TOA.map(addNDWI);
+    
+    
+  // create and add a cloudscore for each pixel to the Landsat 8 imageCollection
+    var cloudPerPixel = l8TOA.map(addCloudPerPixel);
+    var cloudPerPixelMasked = cloudPerPixel.map(cloudMask);
+    
+  // 
+    var NDWIclouds = landsat8NDWI.map(addCloudPerPixel);
+    var NDWI_CPPM = NDWIclouds.map(cloudMask);
+    
+  // create and add a cloudscore layer for a whole scene to the Landsat 8 imageCollection
+    var cloudPerScene = l8TOA.map(getCloudPerScene);
+    
+  
+// Check Things Out ////////////////////////////////////////////////////////////////////////////////
+
+
+// Map Layers //////////////////////////////////////////////////////////////////////////////////////
+
+  // Set the map center using an object & set the zoom level
+    Map.centerObject(WHS, 15);
+  
+  // Add all Haffirs and selected WHS to the map
+    Map.addLayer(haffirs, {}, "haffirs");
+    Map.addLayer(WHS_pt, {color: '#0000FF'}, 'Selected Haffir');
+
+// Graphics ////////////////////////////////////////////////////////////////////////////////////////
+    
+  // Clouds
+    
+    // Create a chart for clouds
+      var clouds_full = ui.Chart.image.series({
+          imageCollection: cloudPerPixel.select('cloud'),
+          region: WHS1,
+          reducer: ee.Reducer.mean(),
+          scale: 30,
+          xProperty: 'system:time_start'
+        })
+        .setChartType('ScatterChart')
+        .setOptions({
+          title: 'Cloud score per pixel over time',
+          hAxis: {title: 'Date', /*minValue: , maxValue:*/ },
+          vAxis: {title: 'Cloudscore', minValue: 0, maxValue: 100},
+          lineWidth: 1,
+          pointSize: 2,
+          series: {
+            0: {color: '9A9B9C'}
+            }
+          });
+        
+        // Display the chart in the console.
+        print(clouds_full);
+
+    
+  // Clouds Masked
+    //print('start data in seconds ', ee.Date(startDate).millis());
+    //print('start data in seconds ', ee.Date(endDate).millis());
+  
+    // masked clouds
+      var clouds_masked = ui.Chart.image.series({
+          imageCollection: cloudPerPixelMasked.select('cloud'),
+          region: WHS1,
+          reducer: ee.Reducer.mean(),
+          scale: 30,
+          xProperty: 'system:time_start'
+        })
+          .setOptions({
+          title: 'Cloud score per pixel over time with 10% mask',
+          hAxis: {title: 'Date', /*minValue: , maxValue:*/ },
+          vAxis: {title: 'Cloudscore', minValue: 0, maxValue: 100},
+          lineWidth: 1,
+          pointSize: 2,
+          series: {
+            0: {color: 'B29700'}
+            }
+          });
+        // Display the chart in the console.
+        print(clouds_masked);
+
+    
+  // // Cloudiness
+
+  //   // Create a chart for cloudiness
+  //     var cloudiness_full = ui.Chart.image.series({
+  //         imageCollection: cloudPerScene.select('cloudiness'),
+  //         region: WHS_pt,
+  //         reducer: ee.Reducer.mean(),
+  //         scale: 30,
+  //         xProperty: 'system:time_start'
+  //       })
+  //         .setOptions({
+  //           title: 'Cloud score per scene over time',
+  //         });
+        
+  //       // Display the chart in the console.
+  //       print(cloudiness_full);
+  
+  // NDWI 
+    
+    // Full series
+      var NDWI_full = ui.Chart.image.series({
+        imageCollection: landsat8NDWI.select('NDWI'),
+        region: WHS1,
+        reducer: ee.Reducer.mean(),
+        scale: 30,
+        xProperty: 'system:time_start'
+      })
+        .setOptions({
+          title: 'NDWI over time',
+          hAxis: {title: 'Date', /*minValue: , maxValue:*/ },
+          vAxis: {title: 'NDWI', minValue: -1, maxValue: 1},
+          lineWidth: 1,
+          pointSize: 2,
+          series: {
+          0: {color: '8dc7f9'} 
+            }
+          });
+      
+      // Display the chart in the console.
+      print(NDWI_full);
+      
+    // Full series
+      var NDWI_full = ui.Chart.image.series({
+        imageCollection: NDWI_CPPM.select('NDWI'),
+        region: WHS1,
+        reducer: ee.Reducer.mean(),
+        scale: 30,
+        xProperty: 'system:time_start'
+      })
+        .setOptions({
+          title: 'NDWI over time with 10% cloud mask',
+          hAxis: {title: 'Date', /*minValue: , maxValue:*/ },
+          vAxis: {title: 'NDWI', minValue: -1, maxValue: 1},
+          lineWidth: 1,
+          pointSize: 2,
+          series: {
+            0: {color: '1f15f3'}
+            }
+          });
+      
+      // Display the chart in the console.
+      print(NDWI_full);
+    
+    // DOY average
+      // var NDWI_avgDOY = ui.Chart.image.doySeries({
+      //   imageCollection: landsat8NDWI.select('NDWI'), 
+      //   region: WHS_pt, 
+      //   regionReducer: ee.Reducer.mean(), 
+      //   scale: 30,
+      //   yearReducer: ee.Reducer.mean(),
+      //   startDay: 1,
+      //   endDay: 366,
+      // })
+      //   .setOptions({
+      //       title: 'NDWI by DOY',
+      //     });
+          
+      // print(NDWI_avgDOY);
+      
+    // DOY for each year
+      // var NDWI_yearDOY = ui.Chart.image.doySeriesByYear({
+      //   imageCollection: landsat8NDWI,
+      //   bandName: 'NDWI', 
+      //   region: WHS_pt,
+      //   regionReducer: ee.Reducer.mean(), 
+      //   scale: 30,
+      //   sameDayReducer: ee.Reducer.mean(),
+      //   startDay: 1,
+      //   endDay: 366,
+      // });
+      // print(NDWI_yearDOY);

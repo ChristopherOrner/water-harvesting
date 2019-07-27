@@ -1,0 +1,188 @@
+
+
+//helpful function for summing up water https://groups.google.com/forum/#!searchin/google-earth-engine-developers/calculating$20image$20pixels$20by$20band$20value$20%7Csort:date/google-earth-engine-developers/SdpRNQ71sBA/D59_A5GHAgAJ
+
+
+
+var polygon = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[36.457749009132385, 31.72405148107752],
+          [36.457287669181824, 31.72356324705587],
+          [36.457223296165466, 31.72337616604826],
+          [36.457260847091675, 31.723248403191924],
+          [36.4578428898285, 31.72288336608962],
+          [36.45860731601715, 31.722317554208537],
+          [36.45871460437775, 31.722340369246346],
+          [36.45943343639374, 31.723088699373832],
+          [36.459497809410095, 31.72309326234388],
+          [36.459519267082214, 31.723029380742755],
+          [36.45958364009857, 31.723061321548812],
+          [36.45958364009857, 31.72316626983415],
+          [36.459513902664185, 31.72322558837762],
+          [36.45946025848389, 31.723198210593036],
+          [36.459240317344666, 31.72332141055998],
+          [36.45917057991028, 31.723275780961675],
+          [36.45781338214874, 31.724065169844806]]]);
+
+//loading  Jordan polygon
+var countries = ee.FeatureCollection('ft:1tdSwUL7MVpOauSgRzqVTOwdfy17KDbw-1d9omPw');
+var jordan = countries.filter(ee.Filter.eq('Country', 'Jordan'));
+
+
+// Load an image collection of landsat 8.
+var l8 = ee.ImageCollection('LANDSAT/LC8_L1T_TOA');
+
+//Filter to dates of interest
+var l82016 = l8.filterDate('2016-01-01', '2017-09-01');
+
+
+//load a set of images just at the point, sorted by cloud cover and least cloud covered selected i think.
+var image = ee.Image(
+  l8.filterBounds(polygon)
+    .filterDate('2016-01-01', '2017-09-01')
+    .sort('CLOUD_COVER')
+    .first()
+);
+
+//create function that assesses NDWI 
+var addNDWI = function(image) {
+  var ndwi = image.normalizedDifference(['B3', 'B5']).rename('NDWI');
+  return image.addBands(ndwi);
+};
+
+
+// Test the addNDVI function on a single image.
+var ndwi1 = addNDWI(image).select('NDWI');
+
+//run this NDWI function on the set of images from dates filtered above
+var multipleNDWI = l82016.map(addNDWI);
+
+
+// another approach not working right now.
+
+//var spatialFiltered = l8.filterBounds(point);
+//print('spatialFiltered', spatialFiltered);
+
+//var temporalFiltered = spatialFiltered.filterDate('2016-01-01', '2016-12-31');
+//print('temporalFiltered', temporalFiltered);
+
+//var median = temporalFiltered.filterDate('2016-06-01', '2016-06-16')//.median();
+
+//print('median',median)
+// This will sort from least to most cloudy.
+//var sorted = temporalFiltered.sort('CLOUD_COVER');
+
+// Get the first (least cloudy) image.
+//var scene = ee.Image(sorted.first());
+
+// Spatially mosaic the images in the collection and display.
+//var combined = temporalFiltered.mosaic();
+//print('mosaic',combined)
+
+//var size = median.toList(100);
+//print('Number of images: ', size);
+//var count = Mosaic.size();
+
+//var leastclouds = ee.Image(Mosaic.sort('CLOUD_COVER').first());
+
+//var sorted = Mosaic.sort('CLOUD_COVER');
+//var leastclouds = ee.Image(sorted.first());
+
+
+var ndwi = image.normalizedDifference(['B3', 'B5']);
+
+var ndwiViz = {min: -1, max: 1, palette: ['blue', 'red']};
+Map.addLayer(ndwi, ndwiViz, 'NDWI');
+
+// Define the visualization parameters for the true color image
+var vizParams = {
+  bands: ['B4', 'B3', 'B2'],
+  min: 0,
+  max: 0.5,
+  gamma: [0.95, 1.1, 1]
+};
+
+// Center the map and display the image.
+//Map.addLayer(median, vizParams, 'true color composite');
+Map.addLayer(image, vizParams, 'true color least cloud')
+print(image,"leastcloudimage")
+
+//this layer is the imgage collection from filter date
+Map.addLayer(multipleNDWI, vizParams,"multndwi2016")
+
+
+//var visParams = {bands: ['B4', 'B3', 'B2'], max: 0.3};
+//Map.addLayer(scene, visParams, 'true-color composite');
+
+//if you want to add the jordan boundary
+//Map.addLayer(jordan)
+
+//var image = ee.Image('LANDSAT/LC8_L1T_TOA/LC80440342014077LGN00');
+
+
+
+Map.setCenter(36.458258628845215,31.723275780961675, 16);
+
+
+//create function that assesses cloudscore 
+var addcloud = function(image) {
+  var cloudscore = ee.Algorithms.Landsat.simpleCloudScore(image);
+  return image.addBands(cloudscore);
+};
+
+//run this  function on the set of images from dates filtered above
+var multiplecloud = l82016.map(addcloud);
+
+
+// Create a chart for clouds
+var cloudchart = ui.Chart.image.series({
+  imageCollection: multiplecloud,
+  region: polygon,
+  reducer: ee.Reducer.max(),
+  scale: 30
+}).setOptions({title: 'cloud cover over time'});
+
+// Display the chart in the console.
+print(cloudchart);
+
+
+// Create a chart for ndwi
+var chart = ui.Chart.image.series({
+  imageCollection: multipleNDWI.select('NDWI'),
+  region: polygon,
+  reducer: ee.Reducer.max(),
+  scale: 30
+}).setOptions({title: 'NDWI over time'});
+
+// Display the chart in the console.
+print(chart);
+
+
+
+var day123 = ee.Image('LANDSAT/LC8_L1T_TOA/LC81730382016123LGN00')
+var day139 = ee.Image('LANDSAT/LC8_L1T_TOA/LC81730382016139LGN00')
+var day155 = ee.Image('LANDSAT/LC8_L1T_TOA/LC81730382016155LGN00')
+var day171 = ee.Image('LANDSAT/LC8_L1T_TOA/LC81730382016171LGN00')
+var day187 = ee.Image('LANDSAT/LC8_L1T_TOA/LC81730382016187LGN00')
+var day203 = ee.Image('LANDSAT/LC8_L1T_TOA/LC81730382016203LGN00')
+var day219 = ee.Image('LANDSAT/LC8_L1T_TOA/LC81730382016219LGN00')
+//some error var day226 = ee.Image('LANDSAT/LC8_L1T_TOA/LC81730382016226LGN00')
+var day235 = ee.Image('LANDSAT/LC8_L1T_TOA/LC81730382016235LGN00')
+var day251 = ee.Image('LANDSAT/LC8_L1T_TOA/LC81730382016251LGN00')
+var day363 = ee.Image('LANDSAT/LC8_L1T_TOA/LC81730382016363LGN00')
+
+
+
+Map.addLayer(day123, vizParams);
+Map.addLayer(day139, vizParams, "cloudy");
+Map.addLayer(day155, vizParams);
+Map.addLayer(day171, vizParams);
+Map.addLayer(day187, vizParams);
+Map.addLayer(day203, vizParams);
+Map.addLayer(day219, vizParams);
+//Map.addLayer(day226, vizParams);
+Map.addLayer(day235, vizParams);
+Map.addLayer(day251, vizParams);
+Map.addLayer(day363, vizParams);
+
+//Create polygons around water using composite of NDWI greates 
+//Plot cloud cover alongside chart for NDWI so you can know if an anomoly is due to clouds

@@ -1,0 +1,206 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var pointsUpdated = /* color: #d63000 */ee.Geometry.MultiPoint(
+        [[35.91536290503552, 31.034348341908856],
+         [35.88182650947783, 30.5028397476398],
+         [35.753612472594796, 30.533321006432647],
+         [35.73320627649764, 30.524635439389375],
+         [35.78358882146745, 30.415422269444868],
+         [35.777853146749294, 30.396873020014894],
+         [36.692754772704234, 31.802660644671835],
+         [36.47393328340513, 31.277795959009698],
+         [36.998709130550196, 31.468134012807102],
+         [37.00227800297762, 31.54045195739561],
+         [35.7607502753815, 30.551187534829523],
+         [35.762075286634854, 30.550434520031345],
+         [35.83741227977896, 30.603215739049634],
+         [36.148204296586755, 31.14386516617094],
+         [36.45829329326784, 31.723182464815697],
+         [36.55635531870632, 31.800627675350423],
+         [36.82985553598496, 31.917578854886095],
+         [36.930090560797, 31.675718074781866],
+         [36.844987076493226, 31.454365046868382],
+         [35.91769277132232, 29.975873268933515],
+         [36.00031098421118, 29.956435122305784],
+         [36.00212836326875, 30.979306017902537],
+         [35.83458731140479, 30.679238488651045],
+         [36.139263798974525, 30.18188913427617],
+         [35.89495854243114, 30.092970852411554],
+         [35.88246084600121, 30.113564381253273],
+         [36.66509613224798, 31.477772543434913],
+         [36.39373119932907, 31.4990395486144],
+         [36.522364124304886, 30.12374124817493],
+         [36.03950509782544, 31.243307391668424],
+         [36.1218437484539, 31.230502458777934],
+         [36.19320517203005, 31.284063587345603],
+         [36.11758559246846, 31.10806568251274],
+         [35.87317806144085, 30.338352022008593],
+         [35.9893471118894, 30.3550231097995],
+         [35.336056182952916, 30.493202555832998],
+         [35.99927416826608, 30.090512023200137]]),
+    newPoints = /* color: #98ff00 */ee.Geometry.MultiPoint(
+        [[37.9655287960511, 32.84127991062129],
+         [38.016286942417764, 32.735126080262965],
+         [38.02683515446347, 32.728691945897964],
+         [38.16220859540135, 32.658243905016256],
+         [38.34243003351378, 32.50716950291405],
+         [37.87854429915296, 32.80295902800765],
+         [37.96709923110643, 32.853768410653764],
+         [38.050377712678596, 32.97591543433628],
+         [38.00077486702503, 32.92247798007975],
+         [37.90107915153635, 32.86851181500862],
+         [37.91331002464426, 32.86793508703882],
+         [37.88803288688791, 32.85690444279564],
+         [36.845126688444, 32.27781932778688],
+         [37.034735860059754, 32.28694765164555]]),
+    pointsFromVideos = /* color: #ff1a1a */ee.Geometry.MultiPoint(
+        [[37.06346155324172, 30.897031343500366],
+         [36.93527399563459, 30.92545784597583]]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+var editFC = require('users/lukemacaulay/Jordan:Functions/EditFeatureCollections');
+
+// Load WHS featureCollection
+  var WHS = ee.FeatureCollection("users/cjorner/Jordan/WHS_MoA_withPCS");
+  Map.addLayer(WHS, {color: 'blue'}, 'All WHS');
+  
+// Add 
+  Map.addLayer(ee.Geometry.Point([37.063472245406956,30.897033878835412]), {}, 'Bayyer');
+  Map.addLayer(ee.Geometry.Point([36.93527395896376,30.925469584145848]), {}, 'Al-Osaji');
+  
+// Upate WHS geometries/locations - checking the first 10 WHS as an example
+  var WHS_0to9 = editFC.updateFromMulti(WHS, 'Faj Osayker', pointsUpdated, 0, 'moved point to cetner');
+  WHS_0to9 = editFC.updateFromMulti(WHS_0to9, 'Wadi Rweshed', pointsUpdated, 1, 'moved point to center');
+  WHS_0to9 = editFC.updateFromMulti(WHS_0to9, 'Al-Hashmeyyeh2', pointsUpdated, 2, 'moved point to center');
+  WHS_0to9 = editFC.updateFromMulti(WHS_0to9, 'Al-Hashmeyyeh3', pointsUpdated, 3, 'moved point to center');
+  WHS_0to9 = editFC.updateFromMulti(WHS_0to9, 'Al- Mohammadeyyeh', pointsUpdated, 4, 'moved point to center');
+  WHS_0to9 = editFC.updateFromMulti(WHS_0to9, 'Bayyer', pointsFromVideos, 0, 'Best guess based off of landsat video. Washed out? Maybe don\'t use');
+  WHS_0to9 = editFC.updateFromMulti(WHS_0to9, 'Wadi Al-Hamam', pointsUpdated, 5, 'moved point to center');
+  WHS_0to9 = editFC.updateFromMulti(WHS_0to9, 'Al-Osaji', pointsFromVideos, 1 , 'Best guess based off of landsat video. Washed out? Maybe don\'t use');
+  
+// Check the updateFromMulti() function is working
+  //print(WHS_0to9);
+  
+// Export modified WHS featureCollection to the Assets tab
+// This takes a few minutes
+  // Export.table.toAsset({
+  //   // the variable name of the new, modified WHS featureCollection
+  //   collection: haffirs,
+  //   // the description displayed in the Tasks
+  //   description: 'exportingUpdatedWHSs',
+  //   // the (optional) file path and (required) name of the new featureCollection
+  //   assetId: 'Jordan/WHS_updated0to9_July22'
+  // });
+ 
+// Add map layers to inspect WHS
+
+  // to select a haffir by name, enter it below:
+    var numWHS = 2;
+    //var startDate = '2013-11-01';
+    //var endDate = '2015-04-01';
+    
+  // filter to the desired haffir
+    var selectWHS = WHS.filter(ee.Filter.and(
+                                ee.Filter.eq('Feature', 'WHS'),
+                                ee.Filter.eq('Number', numWHS)
+                                )
+                            );
+                            
+    var selectWHS_pt = selectWHS.geometry();
+    
+    print(selectWHS.first().get('Name'),
+          selectWHS.first().get('Number'),
+          selectWHS.first().toDictionary()
+        ); 
+    
+    Map.centerObject(selectWHS, 17);
+    Map.addLayer(WHS_0to9, {color: 'FF0000'}, 'Updated WHS');
+
+// Features to come back to if I have time
+  //                    'Owained', points.coordinates().get(6), 'moved point to center'),
+  //                    'Al-Ghadaf 2', points.coordinates().get(7), 'moved point to center'),
+  //                    'Al-makhrooq1', points.coordinates().get(8), 'moved point to center'),
+  //                    'Al-Adla 1', points.coordinates().get(9), 'moved point to center'),
+  //                    'Al-fujaij', points.coordinates().get(10), 'two ponds one is Al-fujaij & one is Fujaij Rebabilitation. Moved Al-fujaij to older looking pond, but that's a guess.'),
+  //                    'Fujaij Rehabilitation', points.coordinates().get(11), 'moved point to center'),
+  //                    'Tal Burma', points.coordinates().get(12), 'moved point to center'),
+  //                    'Qaa` Hafeir', points.coordinates().get(13), 'moved point to center'),
+  //                    'Al- Kharraneh2', points.coordinates().get(14), 'moved point to center'),
+  //                    'Amra 2', points.coordinates().get(15), 'moved point to center'),
+  //                    'Al-Anqeyya', points.coordinates().get(16), 'moved point to center'),
+  //                    'She`eb Al-Qasha', points.coordinates().get(17), 'moved point to center'),
+  //                    'Al-Adla 2', points.coordinates().get(18), 'moved point to center'),
+  //                    'Abu Shwaimer', ee.Geometry.Point([36.329467388698276,31.163716919113263]), 'Best guess based off of landsat video. Washed out? I feel confident with guess.'),
+  //                    'Al- Shedeyyeh', points.coordinates().get(19), 'moved point to center'),
+  //                    'Al- Maghar', points.coordinates().get(20), 'it's like there's a smaller WHS in a larger one. The larger one is for if the smaller one overflows. Moved point to center of smaller one.'),
+  //                    'Al-Abyad 2', points.coordinates().get(21), 'moved point to center'),
+  //                    'Jurf Al- Draweesh', points.coordinates().get(22), 'moved point to center'),
+  //                    'Abu Tarfa', points.coordinates().get(23), 'moved point to center'),
+  //                    'Al- Mahattah', points.coordinates().get(24), 'moved point to center'),
+  //                    'Al-Masoul', points.coordinates().get(25), 'moved point to center'),
+  //                    'Al-Bassah', points.coordinates().get(26), 'moved point to center'),
+  //                    'Jielat', points.coordinates().get(27), 'moved point to center'),
+  //                    'Al-Bassah1', ee.Geometry.Point([36.6203052265148,31.510064821609152]), 'Best guess off of landsat video because pond looks partially washed out. Vidoe matched basemap imagery well'),
+  //                    'Al-Ghadaf 3', ee.Geometry.Point([36.679737706602964,31.39822478185233]), 'moved point to center'), // pond 40
+  //                    'Al-Thrwah 1', ee.Geometry.Point([36.74024182537585,31.158200676674486]), 'moved point to center'),
+  //                    'Al-makhrooq2', ee.Geometry.Point([36.8386047357792,31.17099073274806]), 'moved point to center'),
+  //                    'Al-Khdraweyyat', points.coordinates().get(28), 'moved point to center'),
+  //                    'Shwehet', ee.Geometry.Point([36.668364308539026,30.07538704169752]), 'moved point to center'),
+  //                    'Al-Qatranah', points.coordinates().get(29), 'moved point to center'),
+  //                    'Um Khurmah', points.coordinates().get(30), 'moved point to center'),
+  //                    'Al-Twayeh2', points.coordinates().get(31), 'moved point to center'),
+  //                    'Gregrah', ee.Geometry.Point([35.374370262729826,30.59347418645147]), 'Found in video. Moved point to center. Appears to be washed out now.'),
+  //                    'Um Glait', points.coordinates().get(32), 'moved point to center'),
+  //                    'Rwejeedah', ee.Geometry.Point([36.04099441677806,30.255337094106768]), 'Best guess from video. Not very confident about new point.'),
+  //                    'Rwejeedah', points.coordinates().get(33), 'moved point to center'),
+  //                    'Al-Rutmi', points.coordinates().get(34), 'moved point to center'),
+  //                    'Fenen2', ee.Geometry.Point([35.45799958381508,30.59438121317729]), 'moved point to center'),
+  //                    'Ber Mathkour1', points.coordinates().get(35), 'moved point to center'),
+  //                    'Abu Tarfa2', points.coordinates().get(36), 'moved point to center'),
+  //                    'Madsous', ee.Geometry.Point([35.47049421653821,30.981959681390425]), 'moved point to center'),
+  //                    '', points.coordinates().get(32), 'moved point to center'),
+  //                    '', points.coordinates().get(32), 'moved point to center'),
+  //                    '', points.coordinates().get(32), 'moved point to center'),
+  //                    '', points.coordinates().get(32), 'moved point to center'),
+  //                    '', points.coordinates().get(32), 'moved point to center'),
+  //                    '', points.coordinates().get(32), 'moved point to center'),
+  //                    '', points.coordinates().get(32), 'moved point to center'),
+  //                    '', points.coordinates().get(32), 'moved point to center'),
+  //                    '', points.coordinates().get(32), 'moved point to center'),
+  //                    '', points.coordinates().get(32), 'moved point to center'),
+  //                    '', points.coordinates().get(32), 'moved point to center'),
+  //                    '',;
+  // up next 68 - Al-Summar1
+  // up next 69 - Al-Summar2
+  // 71 - Wadi Sulaiman - to NNE? Circle?
+  // 72 - Al-Mattakh
+  // 73 - Al- Marmak2
+  // 74 - Al-Masqam
+  // 76 - Sahaba
+  // 77 - Al-Naqa
+  // 78 - She`eb Al- Nouq
+  // 79 - Anazah
+  // 80 - Al-Bandan2
+  // 81 - Al-Njaili
+  
+
+// Add notes to feature
+    //WHS_July9.filter(ee.Filter.eq('Name', 'Al-Thrwah 2')).set({'NotesGEE': 'Found in video in correct location. Appears to have been washed away.'})
+    //WHS_July9.filter(ee.Filter.eq('Name', 'Al-makhrooq3')).set({'NotesGEE': 'Not found in video even with 2000 buffer. Possibly has been washed away.'})
+    //WHS_July9.filter(ee.Filter.eq('Name', 'Al-Anab')).set({'NotesGEE': 'Not found in video with 1000 buffer. Possibly has been washed away.'})
+    //WHS_July9.filter(ee.Filter.eq('Name', 'Qea`an Wada`a S')).set({'NotesGEE': 'Not found in video with 1000 buffer. Possibly has been washed away.'})
+    //WHS_July9.filter(ee.Filter.eq('Name', 'Rejlet Al-Faras')).set({'NotesGEE': 'Not found in video with 1000 buffer even around time of construction'})
+    //WHS_July9.filter(ee.Filter.eq('Name', 'Mshaish')).set({'NotesGEE': 'Video unclear - area much larger then all the other ponds to SW fills with water.'})
+    //WHS_July9.filter(ee.Filter.eq('Name', 'Al-Dahel')).set({'NotesGEE': 'Video unclear - several water features pop up and several still exist in the area.'})
+    //WHS_July8.filter(ee.Filter.eq('Name', 'Fenen1')).set({'NotesGEE': 'Video unclear - possibly slightly to the S.'})
+    //WHS_July8.filter(ee.Filter.eq('Name', 'Fenen3')).set({'NotesGEE': 'Video unclear - no sign of WHS.'})
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+// Export modified WHS featureCollection to the Assets tab
+// This takes a few minutes
+  // Export.table.toAsset({
+  //   // the variable name of the new, modified WHS featureCollection
+  //   collection: haffirs,
+  //   // the description displayed in the Tasks
+  //   description: 'codeTest',
+  //   // the (optional) file path and (required) name of the new featureCollection
+  //   assetId: 'Jordan/WHS_exportTest'
+  // });

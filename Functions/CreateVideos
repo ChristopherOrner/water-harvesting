@@ -1,0 +1,419 @@
+// Notes ///////////////////////////////////////////////////////////////////////
+
+// Goals ///////////////////////////////////////////////////////////////////////
+
+  // - add the option to chose the type of SLD 
+  // - next the different type of videos: Landsat imagery, NDWI, etc.
+  // - condense code if possible to change between SR, TOA, or Raw visualization 
+  //   parameters because the rest is repeated code
+  
+// Resources ///////////////////////////////////////////////////////////////////
+  // How to export image collection as a video:
+    // GEE Guides > Assesment Management > Exporting Data
+      // https://developers.google.com/earth-engine/exporting
+      
+  // How to animate an imageCollection on the map & how to export it
+    // Template script:
+      // https://code.earthengine.google.com/6270df443326ec0d90a18838bd91c5a5
+    // GEE discussion:
+      // https://groups.google.com/forum/#!searchin/google-earth-engine-developers/animation%7Csort:
+      // date/google-earth-engine-developers/dkl7EB231AM/OWR15ANEBQAJ
+
+
+// Datasets ////////////////////////////////////////////////////////////////////
+ 
+//   //WHS / Haffirs (updated points)
+//     var WHS = ee.FeatureCollection("users/cjorner/Jordan/WHS_MoA_withPCS")
+//                       .filter(ee.Filter.eq('Number', 20));
+    
+// // Get WHS geometry for filtering imageCollections by bounds
+//     var WHS_pt = WHS.geometry();
+  
+//   // Define variables to filter all imageCollections
+//     var startDate = '2017-11-01';
+//     var endDate = '2019-06-01';
+
+  // Landsat 8 imagery for various
+    // var l8TOA = ee.ImageCollection("LANDSAT/LC08/C01/T1_RT_TOA")
+    //               .filterDate(startDate, endDate)
+    //               .filterBounds(WHS_pt);
+        
+    // var l8SR = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+    //               .filterDate(startDate, endDate)
+    //               .filterBounds(WHS_pt);
+          
+    // var l8raw = ee.ImageCollection("LANDSAT/LC08/C01/T1_RT")
+    //               .filterDate(startDate, endDate)
+    //               .filterBounds(WHS_pt);
+    
+
+// Constants ///////////////////////////////////////////////////////////////////
+
+// Functions ///////////////////////////////////////////////////////////////////
+
+// Code ////////////////////////////////////////////////////////////////////////
+
+// Map Layers //////////////////////////////////////////////////////////////////
+
+  // // Set the map center using an object & set the zoom level
+  //   Map.centerObject(WHS_pt, 15);
+    
+  // // Add all the WHS to the map
+  //   Map.addLayer(WHS, {}, "haffirs");
+    
+  // // Add selected WHS to the map
+  //   Map.addLayer(WHS_pt, {color: '#0000FF'}, 'Selected Haffir');
+    
+  // // Add some imagery
+  //   Map.addLayer(ee.Image('LANDSAT/LC08/C01/T1_SR/LC08_173038_20171113'), {}, 'Surface Reflectance');
+
+// Videos //////////////////////////////////////////////////////////////////////////////////////////
+
+// Imagery Video - TOA ////////////////////////////////// 
+    exports.Landsat = {
+      SR : function(imageCollection, maxFrames, feature, bufferRadius) {
+        // SUBSET --------------------------------------------------------------
+        // Get the imagery to the number of frames I'd like to view / am 
+        // willing to wait to load
+        var subset = imageCollection.limit({
+                                      max: maxFrames,
+                                      property: 'system:time_start',
+                                      ascending: false
+                                    })
+                                    .sort({
+                                      property: 'system:time_start',
+                                      ascending: true
+                                    });
+          
+        // Make the bounding box to clip the video to                         
+        var bounds = feature.geometry().buffer(bufferRadius).bounds();
+         
+        // Make the data 8-bit which is necessary for making a video.
+        var collection8bit =  subset.map(function(image){
+          
+          // Get the timestamp of the image from the metadate, so it can be 
+          // added to the image.
+          var date = ee.Date(image.get('system:time_start'));
+          
+          // Format the date metadate to display only the date (exclude the time
+          // of day).
+          var label = date.format('YYYY-MM-dd');
+          
+            // Clip and style each image, so it's easier to see the WHS across 
+            // different light conditions. Use the visualize() function to turn 
+            // the image into an 8-bit image & add a property called label that 
+            // is the date form above.
+            var image8bit = image.unitScale(0, 10000).visualize({
+                  bands: ['B4','B3','B2'],
+                  max: 0.5,
+                  forceRgbOutput: true,
+                })
+                .clip(bounds)
+                .set({label: label});
+                
+          // Return the image on converted to 8-bit, visualized, clipped, and 
+          // labelled  
+          return image8bit;
+        });
+          
+        // ANNOTATE ------------------------------------------------------------
+        
+        // Load the package that enables adding annotations to imagery, like 
+        // the date
+        var text = require('users/gena/packages:text');
+        
+        // Create a list of a dictionary to determine where annotations are 
+        // placed on the imagery
+        var annotations = [
+          {
+            position: 'left', 
+            offset: '1%', 
+            margin: '1%', 
+            property: 'label', 
+            scale: Map.getScale()*2
+          }
+        ];
+        
+        // Add the annotations to the images with a map function
+        var annotated = collection8bit.map(function(image) {
+          return text.annotateImage(image, {}, bounds, annotations);
+        });
+        
+        // ANIMATE--------------------------------------------------------------
+        
+          // Load the package the enables animation on the map - it will flicker 
+          // through the images in the imageCollection
+          var animation = require('users/gena/packages:animation');
+          
+          // Animate the imageCollection and add it to the map
+          animation.animate(annotated, {maxFrames: maxFrames});
+        // ---------------------------------------------------------------------
+        },
+        // End SR:function key:value dictionary entry
+        
+      // Function for Landsat TOA imagery
+      TOA : function(imageCollection, maxFrames, feature, bufferRadius) {
+        // Subset the imagery to the number of frames I'd like to view / am willing to wait to load
+          var subset = imageCollection.limit({
+                                        max: maxFrames,
+                                        property: 'system:time_start',
+                                        ascending: false
+                                      })
+                                      .sort({
+                                        property: 'system:time_start',
+                                        ascending: true
+                                      });
+          
+          // Make the bounding box to clip the video to                         
+          var bounds = feature.geometry().buffer(bufferRadius).bounds();
+         
+          // Make the data 8-bit which is necessary for making a video.
+            var collection8bit =  subset.map(function(image){
+              // Get the timestamp of the image from the metadate, so it can be added to the image.
+                var date = ee.Date(image.get('system:time_start'));
+              // Format the date metadate to display only the date (exclude the time of day).
+                var label = date.format('YYYY-MM-dd');
+                  // Clip and style each image, so it's easier to see the WHS across different light conditions.
+                  // Use the visualize() function to turn the image into an 8-bit image & add a property called
+                  // label that is the date form above.
+                var image8bit = image.visualize({
+                        bands: ['B4','B3','B2'],
+                        max: 0.4,
+                        forceRgbOutput: true,
+                      })
+                      .clip(bounds)
+                      .set({label: label});
+              // Return the image on converted to 8-bit, visualized, clipped, and labelled  
+                return image8bit;
+          });
+          
+        // Annotate
+          // Load the package that enables adding annotations to imagery, like the date
+            var text = require('users/gena/packages:text');
+          // Create a list of a dictionary to determine where annotations are placed on the imagery
+            var annotations = [
+              {
+                position: 'left', offset: '1%', margin: '1%', property: 'label', scale: Map.getScale()*2
+              }
+            ];
+          // Add the annotations to the images with a map function
+            var annotated = collection8bit.map(function(image) {
+              return text.annotateImage(image, {}, bounds, annotations);
+            });
+        
+        // Animation 
+          // Load the package the enables animation on the map - it will flicker through the images in the imageCollection
+            var animation = require('users/gena/packages:animation');
+          // Animate the imageCollection and add it to the map
+            animation.animate(annotated, {maxFrames: maxFrames});
+        },
+        // End TOA:function key:value dictionary entry
+      
+      // Function for Landsat raw imagery
+      Raw : function(imageCollection, maxFrames, feature, bufferRadius) {
+         
+        // Subset the imagery to the number of frames I'd like to view / am willing to wait to load
+          var subset = imageCollection.limit({
+                                        max: maxFrames,
+                                        property: 'system:time_start',
+                                        ascending: false
+                                      })
+                                      .sort({
+                                        property: 'system:time_start',
+                                        ascending: true
+                                      });
+          
+        // Make the bounding box to clip the video to                         
+          var bounds = feature.geometry().buffer(bufferRadius).bounds();
+          
+        // Styled Layer Description - stretches bands to a normal distribution to help with visualization
+        // Define a RasterSymbolizer element as Normalize
+          var normalize_sld =
+            '<RasterSymbolizer>' +
+              '<ContrastEnhancement><Normalize/></ContrastEnhancement>' +
+              '<ChannelSelection>' +
+                // pick a band for the red channel, right now it's B4 (red)
+                  '<RedChannel>' +
+                    '<SourceChannelName>B4</SourceChannelName>' +
+                  '</RedChannel>' +
+                // pick a band for the green channel, right now it's B3 (gree)
+                  '<GreenChannel>' +
+                    '<SourceChannelName>B3</SourceChannelName>' +
+                  '</GreenChannel>' +
+                // pick a band for the blue channel, right now it's B2 (blue)
+                  '<BlueChannel>' +
+                    '<SourceChannelName>B2</SourceChannelName>' +
+                  '</BlueChannel>' +
+              '</ChannelSelection>' +
+            '</RasterSymbolizer>';
+              
+        // Make the data 8-bit which is necessary for making a video.
+            var collection8bit =  subset.map(function(image){
+              
+              // Get the timestamp of the image from the metadate, so it can be added to the image.
+                var date = ee.Date(image.get('system:time_start'));
+              // Format the date metadate to display only the date (exclude the time of day).
+                var label = date.format('YYYY-MM-dd');
+                
+              // Clip and style each image, so it's easier to see the WHS across different light conditions.
+              // To apply the styled layer descriptor, the image needs to be clipped - the function has a 
+              // hard time without a geometric footprint (if I try it without a clip, it fails).
+                var image8bit = image.sldStyle(normalize_sld)
+                                      .clip(bounds)
+                                    // Use the visualize() function to turn the image into an 8-bit image
+                                      .visualize({
+                                        forceRgbOutput: true,
+                                      })
+                                     // add a property called label that is the date from above.
+                                      .set({label: label});
+                return image8bit;
+            });
+          
+        // Annotate
+          // Load the package that enables adding annotations to imagery, like the date
+            var text = require('users/gena/packages:text');
+          // Create a list of a dictionary to determine where annotations are placed on the imagery
+            var annotations = [
+              {
+                position: 'left', offset: '1%', margin: '1%', property: 'label', scale: Map.getScale()*2
+              }
+            ];
+          // Add the annotations to the images with a map function
+            var annotated = collection8bit.map(function(image) {
+              return text.annotateImage(image, {}, bounds, annotations);
+            });
+        
+        // Animation 
+          // Load the package the enables animation on the map - it will flicker through the images in the imageCollection
+            var animation = require('users/gena/packages:animation');
+          // Animate the imageCollection and add it to the map
+            animation.animate(annotated, {maxFrames: maxFrames});
+      },
+      // End Raw:function key:value dictionary entry
+      
+  NDWI : {
+    
+    // Funtion to display NDWI with white-blue palette
+      basic : function(imageCollection, maxFrames, feature, bufferRadius) {
+          
+          // Subset the imagery to the number of frames I'd like to view / am willing to wait to load  
+          var subset = imageCollection.limit({
+                                        max: maxFrames,
+                                        property: 'system:time_start',
+                                        ascending: false
+                                      })
+                                      .sort({
+                                        property: 'system:time_start',
+                                        ascending: true
+                                      });
+                                      
+          // Make the bounding box to clip the video to                         
+            var bounds = feature.geometry().buffer(bufferRadius).bounds();
+              
+          // Use the visualize() function to turn the image into an 8-bit image & add a 
+          // property called label that is the date from above.
+             var collection8bit =  subset.map(function(image){
+               
+               // Get the timestamp of the image from the metadate, so it can be added to the image.
+                var date = ee.Date(image.get('system:time_start'));
+              // Format the date metadate to display only the date (exclude the time of day).
+                var label = date.format('YYYY-MM-dd');
+                
+              // Style each image, so it's easier to see the WHS across different 
+              // light conditions. Clip the image to reduce the area. Finally turn
+              // it into an 8-bit image, and add a property called label that contains 
+              // the image's date using the timestamp function.
+                var image8bit = image.visualize({
+                                        bands: ['NDWI'],
+                                        palette: ['white', 'white', 'white','blue', 'blue'],
+                                        min: -1,
+                                        max: 1,
+                                        forceRgbOutput: true,
+                                      })
+                                      .clip(bounds)
+                                      .set({label: label});
+                return image8bit;
+            });
+            
+          // Annotate
+          // Load the package that enables adding annotations to imagery, like the date
+            var text = require('users/gena/packages:text');
+          // Create a list of a dictionary to determine where annotations are placed on the imagery
+            var annotations = [
+              {
+                position: 'left', offset: '1%', margin: '1%', property: 'label', scale: Map.getScale()*2
+              }
+            ];
+          // Add the annotations to the images with a map function
+            var annotated = collection8bit.map(function(image) {
+              return text.annotateImage(image, {}, bounds, annotations);
+            });
+        
+        // Animation 
+          // Load the package the enables animation on the map - it will flicker through the images in the imageCollection
+            var animation = require('users/gena/packages:animation');
+          // Animate the imageCollection and add it to the map
+            animation.animate(annotated, {maxFrames: maxFrames});
+        },
+        
+  // Funtion for NDWI with a threshold, either it is water or it is not
+    threshold : function(imageCollection, numFrames, feature, bufferRadius, thresholdValue){
+          
+          // Subset the imagery to the number of frames I'd like to view / am willing to wait to load  
+          var subset = imageCollection.limit({
+                                        max: maxFrames,
+                                        property: 'system:time_start',
+                                        ascending: false
+                                      })
+                                      .sort({
+                                        property: 'system:time_start',
+                                        ascending: true
+                                      });
+          // Make the bounding box to clip the video to                         
+            var bounds = feature.geometry().buffer(bufferRadius).bounds();
+              
+          // Use the visualize() function to turn the image into an 8-bit image & add a 
+          // property called label that is the date from above.
+            var collection8bit =  subset.map(function(image){
+              
+              // Get the timestamp of the image from the metadate, so it can be added to the image.
+                var date = ee.Date(image.get('system:time_start'));
+              // Format the date metadate to display only the date (exclude the time of day).
+                var label = date.format('YYYY-MM-dd');
+                
+              // Style each image, so it's easier to see the WHS across different 
+              // light conditions. Clip the image to reduce the area. Finally turn
+              // it into an 8-bit image, and add a property called label that contains 
+              // the image's date using the timestamp function.
+                var binary = image.select('NDWI').gte(thresholdValue);
+                var image8bit = binary.visualize({
+                                        palette: ['white', 'white', 'white', 'blue', 'blue'],
+                                        forceRgbOutput: true,
+                                      })
+                                      .clip(bounds)
+                                      .set({label: label});
+                return image8bit;
+            });
+            
+          // Annotate
+          // Load the package that enables adding annotations to imagery, like the date
+            var text = require('users/gena/packages:text');
+          // Create a list of a dictionary to determine where annotations are placed on the imagery
+            var annotations = [
+              {
+                position: 'left', offset: '1%', margin: '1%', property: 'label', scale: Map.getScale()*2
+              }
+            ];
+          // Add the annotations to the images with a map function
+            var annotated = collection8bit.map(function(image) {
+              return text.annotateImage(image, {}, bounds, annotations);
+            });
+        
+        // Animation 
+          // Load the package the enables animation on the map - it will flicker through the images in the imageCollection
+            var animation = require('users/gena/packages:animation');
+          // Animate the imageCollection and add it to the map
+            animation.animate(annotated, {maxFrames: maxFrames});
+        }
+    }
+};

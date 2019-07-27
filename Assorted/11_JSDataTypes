@@ -1,0 +1,122 @@
+// Boolean
+  var correct = true;
+  
+  // the print function displays whatever is in its parentheses in the console
+  // to the right. 'boolean: ' a string to print with variable boolean to help
+  // label it in the console to make it easier to find.
+  print('boolean:', correct);
+
+// Number
+  var pi = 3.14;
+  print('number:', pi);
+
+// String
+  var word = 'letters';
+  print('string:', word);
+
+// Undefined
+  var oops;
+  print('undefined:', oops);
+
+// Null
+  var unknown = null;
+  print('null:', unknown);
+
+// List
+  // here is a list made of the same values above
+  var list1 = [true, 3.14, 'rope', undefined, null]; 
+    /*Note: a list interprets undefined as null. Because undefined and null
+    mean something is missing, they are sometimes interpreted the same. Notice 
+    if the list is expanded, underfined is listed, so the list remembers what 
+    is was originally feed. The main thing to keep in mind is if a function is 
+    returning undefined, that doesnot mean the answer is nothing or 0, an 
+    undefined means something is going wrong. */
+  
+  // Here is the same list made using the variables the values were assigned to 
+  var list2 = [correct, pi, word, oops, unknown];
+    /*Note: it does not matter whether the original value is used or the 
+    variable that stores the value. Variable stands in for the original value, 
+    when the variable was called to create a list, it passed along the data that 
+    is was holding.*/
+  
+  print('A list:', list1);
+  print('The same list:', list2);
+    // They are identical!
+
+// Object
+  var object = {boolean: true,
+             number: 3.14,
+             string: 'rope',
+             oops: undefined,
+             unknown: null,
+             firstList: list1,
+             '2ndlist': list2,
+             "another boolean": false,
+             tiny_object: {tiny: 'object'}
+  };
+  print('object', object);
+    /*Note 1: an object does not keep the key:value pairs, also called properties,
+    in the same order that they were entered in like a list does. The properties
+    are listed in alphabetical order. Because we reference values in an object
+    by the name of they property, the order does not matter.*/
+    
+    /*Note 2: most keys can be defined with or without quotes, but there are a 
+    few rules. 
+      - Keys cannot start with a number unless it is in quotes.
+      - Spaces cannot be used in a key unless the whole key is in quotes.
+      - Some symbols are okay, like an underscore _, but others are not, like
+         an ampersand, unless the whole key is in quotes.
+      - Essentially, quotes make anything okay, but they take longer to type. 
+        The preferred way to write property names is to keep them short, simple,
+        and use camelCase if needed.*/
+        
+// typeof function
+  print('Boolean: ' + typeof correct, 
+        'Number: ' + typeof pi, 
+        'String: ' + typeof word, 
+        'Undefined: ' + typeof oops);
+  
+  print('Null: ' + typeof unknown,
+        'List: ' + typeof list1,
+        'Object: ' + typeof object);
+    /*Note 1: typeof isn't a like most functions where a pair of parentheses is 
+    needed, like print() has. typeof just needs to be written before the 
+    variable of interest.*/
+    
+    /*Note 2: null, list, and object are returned as types of objects. I just 
+    said null and list were their own data types though. Why are they objects 
+    now? Null and list are still their own data types. They are reported as 
+    objects because that is how GEE handles them. GEE actually handles all data
+    as objects because GEE passes this code off to Google's servers in nicely
+    packaged objects. When GEE server's complete the commands and pass back 
+    their results in the Console window, some functions, like typeof, have told
+    GEE to unwrap the object and look instead for the data type that was 
+    packaged inside. However, that does not work on all data types, like null 
+    and list. Most of the time this is fine. When Google servers receive the 
+    pre-packaged list as an object, the server will still read it as a list. The
+    packing only becomes troublesome if you write custom functions the object 
+    wrapping starts to interfer.*/
+
+// try ctrl + space & preview
+  // place the crusor after the period and hit ctrl + space to see possible
+  // functions.
+  Map.
+  
+  // place the crusor in the parentheses and hit ctrl + space to see possible 
+  // agruments.
+  Map.addLayer(); 
+  
+  /*Note 1: Map. is not a proper function, so GEE keeps reading until it finds 
+  more code. It trys to read Map.Map.addLayer(), but that's not a function 
+  either, so it returns an error. */
+  
+  /*Note 2: Once GEE hits an error, it stops reading the rest of the code. Even 
+  if the rest of the code is fine, GEE stops at the first error. This can help 
+  you identify where an error is by looking at what is printed and what is not
+  printed. If something is printed, then the error is somewhere below it. If 
+  something is not printed, then the error is somewhere above it. If you 
+  comment out the Map. and Map.addLayer code above, the following line will be
+  print once you run the script again.*/
+  
+// This code won't get read because there's a bug above.
+  print('I want to make a list of objects: ', [object, object, object]);

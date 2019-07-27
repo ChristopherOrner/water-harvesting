@@ -1,0 +1,101 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var roi = /* color: #0b4a8b */ee.Geometry.Polygon(
+        [[[-74.17213, -8.65569],
+          [-74.17419, -8.39222],
+          [-74.38362, -8.3698],
+          [-74.43031, -8.61293]]]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// Load the Global Surface Water dataset
+var gsw = ee.Image('JRC/GSW1_0/GlobalSurfaceWater');
+print(gsw);
+    // There's 7 bands
+        // 1. occurrence  = percent of time water is persent
+        // 2. change_abs  = absolute change in occrrence b/w two periods
+        // 3. change_norm = normalized difference in occurence b/w two periods
+        // 4. seasonality = number of months water is present
+        // 5. recurrence  = frequency(?) water returns each year
+        // 6. transition  = a category for how water changed b/w periods
+        // 7. max_extent  = all locations that water has been detected
+
+// Grab just the occurrence of water layer
+var occurrence = gsw.select('occurrence');
+
+// Define the visualization parameter, to make the data looks nice
+var VIS_OCCURRENCE = {
+  min:0,
+  max:100,
+  palette: ['red', 'blue']
+      // red means low frequency - rarely water
+      // blue means almost always water - permanent
+};
+
+// Plot the occurence layer & give it a nice name
+Map.addLayer({
+  eeObject: occurrence.updateMask(occurrence.divide(100)),
+    // modifications to layer for display need to be included 
+    //    in the eeObject
+  name: "Water Occurrence (1984-2015)",
+  visParams: VIS_OCCURRENCE
+});
+            
+
+// Create a water mask layer, and set the image mask so that non-water areas
+// are opaque.
+var water_mask = occurrence.gt(90).unmask(0);
+
+// Define the visualization parameter, to make the mask looks nice
+var VIS_WATER_MASK = {
+  palette: ['white', 'black']
+};
+
+// Add the mask to the map
+Map.addLayer({
+  eeObject: water_mask,
+  visParams: VIS_WATER_MASK,
+  name: '90% occurrence water mask'
+});
+
+// Places to check out - uncomment one of the following statements 
+//    to center the map.
+  // Map.setCenter(-90.162, 29.8597, 10);   // New Orleans, USA
+  // Map.setCenter(-114.9774, 31.9254, 10); // Mouth of the Colorado River, Mexico
+  // Map.setCenter(-111.1871, 37.0963, 11); // Lake Powell, USA
+  // Map.setCenter(149.412, -35.0789, 11);  // Lake George, Australia
+  // Map.setCenter(105.26, 11.2134, 9);     // Mekong River Basin, SouthEast Asia
+  // Map.setCenter(90.6743, 22.7382, 10);   // Meghna River, Bangladesh
+  // Map.setCenter(81.2714, 16.5079, 11);   // Godavari River Basin Irrigation Project, India
+  // Map.setCenter(14.7035, 52.0985, 12);   // River Oder, Germany & Poland
+  // Map.setCenter(-59.1696, -33.8111, 9);  // Buenos Aires, Argentina
+  // Map.setCenter(-74.4557, -8.4289, 11);  // Ucayali River, Peru
+  
+// Get the absolute change intensity layer
+var change = gsw.select("change_abs");
+
+// Define a style so the absolute change looks nice
+var VIS_CHANGE = {
+  min:-50,
+  max:50,
+  palette: ['red', 'black', 'limegreen']
+    // red means negative change - loss of water / less frequent
+    // black means relatively little change or no change
+    // lime green means positive change - added water / more frequent
+};
+
+// Plot the absolute change
+Map.addLayer({
+  eeObject: change,
+  visParams: VIS_CHANGE,
+  name: 'occurrence change intensity'
+});
+ 
+// Generate a histogram object and print it to the console tab.
+var histogram = ui.Chart.image.histogram({
+  image: change,
+  region: roi,
+  scale: 30,
+  minBucketWidth: 10
+});
+histogram.setOptions({
+  title: 'Histogram of surface water change intensity.'
+});
+print(histogram);

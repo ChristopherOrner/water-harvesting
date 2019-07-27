@@ -1,0 +1,27 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = /* color: #d63000 */ee.Geometry.Point([36.32808408426013, 31.836054301422564]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// Landsat 8 
+  var l8TOA = ee.ImageCollection("LANDSAT/LC08/C01/T1_RT_TOA")
+        .filterDate('2018-06-01', '2018-08-30')
+        .filterBounds(geometry);
+
+// Add to map
+  Map.addLayer(l8TOA, {bands: ['B4', 'B3', 'B2'], max: 0.4}, 'Landsat 8');
+  
+  
+  
+  
+ var mistake;
+ var unknown = null;
+ 
+ print('mistake: ', mistake);
+ print('unknown: ', unknown);
+ 
+ var listsMixed = ['string', 5, null, undefined, true];
+ print(listsMixed);
+ 
+ mistake = 'fixed';
+ print(mistake);
+ 
+ print(typeof 4);

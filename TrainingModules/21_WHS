@@ -1,0 +1,49 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var WHS = ee.FeatureCollection("users/cjorner/Hafiers_20190724");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+/* 
+Water Harvesting Training Module 2 
+Part 1: Load and Display Water Harvesting Sites in GEE
+
+This script was written as apart of the Training Program in ArcGIS Collector,
+Survey123, Avenze Maps, and Google Earth Engine for Water Harvesting and 
+Rangeland Management in Jordan developed by the University of Califoria, 
+Berkeley in conjunction with Texas A&M University and the University of Florida.
+
+Author: Christopher Orner from the Macaulay Lab at UC Berkeley. 2019-07-26
+*/
+
+// First, add the water harvesting site asset to the imports section.
+
+// Rename the water harvesting site asset from "table" to a name like "WHS"
+
+// Inspect the dataset. The print function writes information to the Console 
+// tab over to the right.
+  print(WHS);
+
+// Add WHS to the map with the Map.addLayer() function, but first here is some 
+// more information:
+
+  /*The Map.addLayer() function requires a few pieces of information in the 
+  following order:
+  
+    Map.addLayer(data, {color: " "}, name);
+      - data:   this is the water harvesting sites, so it will be WHS
+      - color:  this is where the color can be selected. It needs the curly 
+                  brackets and color: to tell GEE to go in a change the color 
+                  setting. 
+      - name:   this is where the layer can be given a descriptive name to have
+                  on the map.
+  */
+  
+// Now try adding the water harvesting sites to the map.
+  Map.addLayer(WHS, {color: "blue"}, "Water Harvesting Sites");
+  
+// Filter the water harvesting sites down to just one site. Look at Abata.
+  var abata = WHS.filter(ee.Filter.eq("Hafeir_Nam","Abata"));
+
+// Add abata to the map in the color magenta and label the layer "Abata."
+  Map.addLayer(abata, {color: "magenta"}, "Abata");
+  
+// Center the map on Abata and zoom into it.
+  Map.centerObject(abata, 16);

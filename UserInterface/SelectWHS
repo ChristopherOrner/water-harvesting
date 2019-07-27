@@ -1,0 +1,65 @@
+// Overview ////////////////////////////////////////////////////////////////////
+
+/*
+This script pulls from the functions I've defined in other scripts to make an
+interactive app-like experience. The goal right now is to:
+  - hid all code / make the scripts all usable through a User Interface style
+    format. (Check with Luke on this).
+*/
+
+// WHS / Haffirs (updated points)
+var haffirs = ee.FeatureCollection("users/cjorner/Jordan/WHS_MoA_withPCS");
+  
+var select = ui.Select({
+  items: haffirs.sort('Name').aggregate_array('Name').getInfo(),
+  placeholder: 'Choose a location...',
+  onChange: function(name) {
+    
+    var WHS = haffirs.filter(ee.Filter.eq('Name', name));
+    var geo = WHS.geometry();
+    
+    Map.addLayer(WHS, {color: '0000FF'}, 'Selected Haffir');
+    Map.centerObject(geo, 15);
+  }
+});
+
+  var checkbox = ui.Checkbox({
+      label: 'WHS point', 
+      value: true, 
+      onChange: function(checked){
+        // Shows or hides the first map layer based on the checkbox's value.
+        Map.layers().get(0).setShown(checked);
+      },
+    });
+
+  var video = ui.Checkbox({
+    label: 'Video', 
+    value: false, 
+    onChange: function(checked){
+        print(enterFrames);
+    }
+  });   
+      
+  var enterFrames = ui.Textbox({
+    placeholder: 'Max number of images',
+    onChange: function(text) {
+       
+      var name = select.getValue();  
+      var WHS = haffirs.filter(ee.Filter.eq('Name', name));
+      var geo = WHS.geometry();  
+       
+      var l8TOA = ee.ImageCollection("LANDSAT/LC08/C01/T1_RT_TOA")
+        // filter to a period of time; the earliest landsat8 imagery is from '2013-04-11'
+          //.filterDate(startDate, endDate)
+        // filter to one WHS
+          .filterBounds(geo);
+          
+      var numFrames = +text;
+      var Videos = require('users/lukemacaulay/Jordan:Functions/CreateVideos');
+      Videos.Landsat.TOA(l8TOA, numFrames, WHS, 1000);
+      },
+  });
+
+print(select);
+print(checkbox);
+print(video);

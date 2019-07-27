@@ -1,0 +1,152 @@
+// Overview ////////////////////////////////////////////////////////////////////
+
+/*
+This script pulls from the functions I've defined in other scripts to make an
+interactive app-like experience. The goal right now is to:
+  - hid all code / make the scripts all usable through a User Interface style
+    format. (Check with Luke on this).
+*/
+
+// Load Datasets ///////////////////////////////////////////////////////////////
+
+// WHS / Haffirs (updated points)
+  var haffirs = ee.FeatureCollection("users/cjorner/Jordan/WHS_MoA_withPCS");
+
+// Imagery
+  var l8TOA = ee.ImageCollection("LANDSAT/LC08/C01/T1_RT_TOA");
+  var l8SR = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR");
+  var l8Raw = ee.ImageCollection("LANDSAT/LC08/C01/T1_RT");
+        
+// Other scripts
+   var Videos = require('users/lukemacaulay/Jordan:Functions/CreateVideos');
+   var Editor = require('users/lukemacaulay/Jordan:Functions/EditFeatureCollections');
+  
+
+// User Interface ///////////////////////////////////    
+// Create an empty panel in which to arrange widgets.
+// The layout is vertical flow by default.
+var panel = ui.Panel({style: {width: '400px'}})
+    .add(ui.Label({
+                    value: 'Select a WHS',
+                    style: {fontSize: '16px',
+                            fontWeight: 'bold'}
+                 }));
+
+  var select = ui.Select({
+    items: haffirs.sort('Name').aggregate_array('Name').getInfo(),
+    placeholder: 'Choose a location...',
+    onChange: function(name) {
+      
+      var WHS = haffirs.filter(ee.Filter.eq('Name', name));
+      var geo = WHS.geometry();
+  
+      Map.clear();
+      Map.addLayer(WHS, {color: '0000FF'}, 'Selected Haffir');
+      Map.centerObject(geo, 15);
+      
+    }
+  });
+  panel.widgets().set(1, select);
+  
+  var MapHeader = ui.Label({
+                            value: 'Map Layers',
+                            style: {fontSize: '16px',
+                                    fontWeight: 'bold'}
+                          });
+                          
+  panel.widgets().set(2, MapHeader);
+  
+  var checkbox = ui.Checkbox({
+      label: 'WHS point', 
+      value: true, 
+      onChange: function(checked){
+        // Shows or hides the first map layer based on the checkbox's value.
+        Map.layers().get(0).setShown(checked);
+      },
+    });
+  panel.widgets().set(3, checkbox);
+  
+  var video = ui.Checkbox({
+    label: 'Video', 
+    value: false, 
+    onChange: function(checked){
+        panel.widgets().set(5, ui.Label({
+                                          value: 'Video settings',
+                                          style: {fontSize: '16px',
+                                                  fontWeight: 'bold'}
+                                            }));
+        panel.widgets().set(6, imageryChoices);
+        panel.widgets().set(7, enterFrames);
+        
+    }
+  }); 
+  panel.widgets().set(4, video);
+  
+  
+  var imageryTypes = {
+                      'Top of the Atmosphere Reflectance' : 'TOA', 
+                      'Surface Reflectance': 'SR', 
+                      'Raw Scenes': 'Raw'
+                     };
+            
+  var imageryChoices = ui.Select({
+    items: Object.keys(imageryTypes),
+    placeholder: 'Choose a type of imagery',
+    onChange: function() {
+      
+      var name = select.getValue();  
+      var WHS = haffirs.filter(ee.Filter.eq('Name', name));
+      var geo = WHS.geometry();  
+      
+      Map.clear();
+      Map.addLayer(WHS, {color: '0000FF'}, 'Selected Haffir');
+    }
+  });
+  
+  var enterFrames = ui.Textbox({
+    placeholder: 'Max number of images',
+    onChange: function(text) {
+      
+      var name = select.getValue();  
+      var WHS = haffirs.filter(ee.Filter.eq('Name', name));
+      var geo = WHS.geometry();  
+      
+      Map.clear();
+      Map.addLayer(WHS, {color: '0000FF'}, 'Selected Haffir');
+       
+      var numFrames = +text;
+       
+      if (imageryTypes[imageryChoices.getValue()] === 'TOA') {
+        var filteredTOA = l8TOA.filterBounds(geo);
+        Videos.Landsat.TOA(filteredTOA, numFrames, WHS, 1000);
+        
+      } else if (imageryTypes[imageryChoices.getValue()] === 'SR') { 
+        var filteredSR = l8SR.filterBounds(geo);
+        Videos.Landsat.SR(filteredSR, numFrames, WHS, 1000);
+        
+      } else if (imageryTypes[imageryChoices.getValue()] === 'Raw') { 
+        var filteredRaw = l8Raw.filterBounds(geo);
+        Videos.Landsat.Raw(filteredRaw, numFrames, WHS, 1000);
+      }
+    },
+  });
+  
+  var addPolygon = ui.Label({
+                          value: 'Draw a polygon',
+                          style: {fontSize: '16px',
+                                  fontWeight: 'bold'}
+                          });
+  
+  panel.widgets().set(8, addPolygon);
+  
+  var charts = ui.Label({
+                          value: 'Charts',
+                          style: {fontSize: '16px',
+                                  fontWeight: 'bold'}
+                          });
+  
+  panel.widgets().set(9, charts);
+  
+  
+
+ui.root.add(panel);
