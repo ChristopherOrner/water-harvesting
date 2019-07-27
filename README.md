@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="460" height="460" src="posterImage.JPG">
+  <img width="300" height="300" src="posterImage.JPG">
 </p>
 
 # Jordan Water Harvesting Site Monitoring
