@@ -5,9 +5,9 @@ I work as a GIS specialist for the Macaulay Lab at UC. I am currently contracted
 The training to learn how to monitor water harvesting sites with Google Earth Engine (GEE) has three training modules.
 
 1. Data Management
-  <p>
-  Data Management teaches employees how to get the Excel files they already have, properly format them to convert into shapefiles, and how to load those shapefiles into GEE.
-  </p>
+
+Data Management teaches employees how to get the Excel files they already have, properly format them to convert into shapefiles, and how to load those shapefiles into GEE.
+
 2. Introduction to GEE
 
 3. NDWI
