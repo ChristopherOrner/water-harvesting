@@ -1,7 +1,5 @@
-![Water Harvesting Site Example](posterImage.JPG)
-
 <p align="center">
-  <img width="460" height="300" src="posterImage.JPG">
+  <img width="460" height="460" src="posterImage.JPG">
 </p>
 
 # Jordan Water Harvesting Site Monitoring
