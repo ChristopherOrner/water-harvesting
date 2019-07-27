@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="300" height="300" src="posterImage.JPG"> <img width="600" height="300" src="NDWI.png">
+  <img width="250" height="250" src="posterImage.JPG"> <img width="500" height="250" src="NDWI_mask.png">
 </p>
 
 # Jordan Water Harvesting Site Monitoring
